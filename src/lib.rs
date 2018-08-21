@@ -12,7 +12,7 @@ impl fmt::Display for Player {
         match self {
             Player::O => write!(f, "{}", "O"),
             Player::X => write!(f, "{}", "X"),
-            Player::Clear => write!(f, "{}", "-"),
+            Player::Clear => write!(f, "{}", " "),
         }
     }
 }
@@ -50,7 +50,7 @@ impl TicTacToe {
     }
 
     pub fn next_turn(&mut self) -> Result<(), &'static str> {
-        if !self.check_game_over() {
+        if self.check_game_over() {
             Err("game already over")
         } else {
             if self.turn == Player::X {
@@ -63,7 +63,11 @@ impl TicTacToe {
         }
     }
 
+    // TODO
+    // Need to handler filled slot as well
     pub fn fill(&mut self, row: i32 ,col: i32) -> Result<(), &'static str> {
+        // TODO
+        // Is this error handler API good?
         if (row > 2) ||
            (row < 0) ||
            (col > 2) ||
@@ -157,18 +161,43 @@ impl TicTacToe {
         count == 3
     }
 
-    pub fn print_board(&self) {
-        println!("Turn: {}", self.turn);
+    pub fn get_board(&self) -> String {
+        let mut board_str = String::new();
+        board_str.push_str("   _____C_O_L_____ \n");
+        board_str.push_str("  | λ | 0 | 1 | 2 |\n");
+        board_str.push_str("  |---|---|---|---|\n");
 
-        println!("Board");
-        for row in &self.board {
-            for cell in row {
-                print!("{}", cell);
-            }
-            println!("");
-        }
+        let row_0 = format!(
+            "R | 0 | {} | {} | {} |\n",
+            self.board[0][0],
+            self.board[0][1],
+            self.board[0][2],
+        );
+        board_str.push_str(&row_0);
 
-        println!();
+        board_str.push_str("O |---|---|---|---|\n");
+
+        let row_1 = format!(
+            "W | 1 | {} | {} | {} |\n",
+            self.board[1][0],
+            self.board[1][1],
+            self.board[1][2],
+        );
+        board_str.push_str(&row_1);
+
+        board_str.push_str("  |---|---|---|---|\n");
+
+        let row_2 = format!(
+            "  | 2 | {} | {} | {} |\n",
+            self.board[2][0],
+            self.board[2][1],
+            self.board[2][2],
+        );
+
+        board_str.push_str(&row_2);
+        board_str.push_str("   --------------- ");
+
+        board_str
     }
 }
 
@@ -201,14 +230,35 @@ mod test {
         let mut game = TicTacToe::new();
 
         let result = game.next_turn();
-        if let Ok(_) = result {
-            assert_eq!(game.get_turn(), Player::X);
-        }
+        assert_eq!(result, Ok(()));
+        assert_eq!(game.get_turn(), Player::X);
         
         let result = game.next_turn();
-        if let Ok(_) = result {
-            assert_eq!(game.get_turn(), Player::O);
-        }
+        assert_eq!(result, Ok(()));
+        assert_eq!(game.get_turn(), Player::O);
+
+        game.fill(0, 0).unwrap();
+        game.fill(1, 1).unwrap();
+        game.fill(2, 2).unwrap();
+
+        let result = game.next_turn();
+        assert_eq!(result, Err("game already over"));
+    }
+
+    #[test]
+    fn print_board() {
+        let mut game = TicTacToe::new();
+        let board = "   _____C_O_L_____ 
+  | λ | 0 | 1 | 2 |
+  |---|---|---|---|
+R | 0 |   |   |   |
+O |---|---|---|---|
+W | 1 |   |   |   |
+  |---|---|---|---|
+  | 2 |   |   |   |
+   --------------- ";
+
+        assert_eq!(game.get_board(), board);
     }
 
     #[test]

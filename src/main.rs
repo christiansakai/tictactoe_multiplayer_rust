@@ -1,37 +1,77 @@
 extern crate tictactoe;
 
+use std::io;
+// use std::io::{self, Read, Write, ErrorKind};
+
 use tictactoe::{TicTacToe};
 
 fn main() {
-    let _game = TicTacToe::new();
+    let mut game = TicTacToe::new();
 
-    // // game.print_board();
-    // // game.next_turn();
-    // // game.print_board();
+    println!("----------------------");
+    println!("Welcome to Tic Tac Toe");
+    println!("----------------------");
+    println!();
 
-    // println!("{}", game.check_topleft_bottom_right());
+    loop {
+        println!("=====================================");
+        println!();
+        println!("{}", game.get_board());
+        println!();
+        println!("Turn:  Player {}", game.get_turn());
+        println!();
 
-    // // game.fill(0, 0);
-    // // game.fill(1, 1);
-    // // game.fill(2, 2);
+        // TODO
+        // How to write input on this line
+        println!("Input your row and col separated by space: ");
 
-    // game.fill(0, 2);
-    // game.fill(1, 1);
-    // game.fill(2, 0);
+        let mut buffer = String::new();
+        io::stdin()
+            .read_line(&mut buffer)
+            .expect("reading from stdin failed");
 
-    // // game.print_board();
+        let input_str = buffer
+            .trim()
+            .to_string();
 
-    // println!("{}", game.check_bottomleft_topright());
+        let input_vec: Vec<i32> = input_str
+            .split_whitespace()
+            // TODO
+            // How to validate user input
+            // so that user only inputs integer
+            // between 0 and 2
+            .map(|el| el.parse().unwrap())
+            .collect();
 
-    // // game.print_board();
-    
-    // // match game.fill(0, 1) {
-    // //     Ok(_) => game.print_board(),
-    // //     Err(s) => println!("{}", s),
-    // // }
+        let row = input_vec[0];
+        let col = input_vec[1];
+        let turn = game.get_turn();
 
-    // // println!("{:?}", game);
+        println!();
+        println!(
+            "Player {} chose row: {}, col: {}", 
+            turn,
+            row,
+            col,
+        );
+        println!();
 
+        // TODO
+        // Need to handle error here
+        game.fill(row, col).unwrap();
+        game.next_turn();
 
+        if game.check_game_over() {
+            break;
+        }
+    }
+
+    println!("----------------------");
+    println!("      Game Over       ");
+    println!("----------------------");
+    println!();
+    println!("{}", game.get_board());
+    println!();
+    println!("Player {} wins! Congratulations!", game.get_turn());
 }
 
