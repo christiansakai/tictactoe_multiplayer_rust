@@ -63,19 +63,29 @@ impl TicTacToe {
         }
     }
 
-    // TODO
-    // Need to handler filled slot as well
-    pub fn fill(&mut self, row: i32 ,col: i32) -> Result<(), &'static str> {
-        // TODO
-        // Is this error handler API good?
+    pub fn fill(&mut self, row: i32 ,col: i32) -> Result<(), String> {
         if (row > 2) ||
            (row < 0) ||
            (col > 2) ||
            (col < 0) {
-            return Err("row and col must be between 0 and 2");
+            let err = String::from("row and col must be between 0 and 2");
+            return Err(err);
         }
 
-        self.board[row as usize][col as usize] = self.turn;
+        let row = row as usize;
+        let col = col as usize;
+
+        if self.board[row][col] != Player::Clear {
+            let err = format!(
+                "row {} and col {} are occupied",
+                row,
+                col,
+            );
+
+            return Err(err);
+        }
+
+        self.board[row][col] = self.turn;
         Ok(())
     }
 
@@ -266,16 +276,26 @@ W | 1 |   |   |   |
         let mut game = TicTacToe::new();
 
         let result =  game.fill(-1, 2);
-        assert_eq!(result, Err("row and col must be between 0 and 2"));
+        assert_eq!(result, Err(String::from("row and col must be between 0 and 2")));
 
         let result =  game.fill(3, 2);
-        assert_eq!(result, Err("row and col must be between 0 and 2"));
+        assert_eq!(result, Err(String::from("row and col must be between 0 and 2")));
 
         let result =  game.fill(0, -1);
-        assert_eq!(result, Err("row and col must be between 0 and 2"));
+        assert_eq!(result, Err(String::from("row and col must be between 0 and 2")));
 
         let result =  game.fill(0, 3);
-        assert_eq!(result, Err("row and col must be between 0 and 2"));
+        assert_eq!(result, Err(String::from("row and col must be between 0 and 2")));
+    }
+
+    #[test]
+    fn cannot_fill_occupied_cell() {
+        let mut game = TicTacToe::new();
+
+        let _result = game.fill(0, 0).unwrap();
+        let result = game.fill(0, 0);
+
+        assert_eq!(result, Err(String::from("row 0 and col 0 are occupied")));
     }
 
     #[test]
