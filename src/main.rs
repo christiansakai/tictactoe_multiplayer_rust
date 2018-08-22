@@ -1,30 +1,34 @@
 extern crate tictactoe;
 
-use std::process::Command;
 use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
-use tictactoe::{TicTacToe};
+use tictactoe::game::{TicTacToe};
+use tictactoe::util;
 
 fn main() {
     play_hotseat();
 }
 
 fn play_hotseat() {
-    clear_terminal();
+    util::clear_terminal();
     let mut game = TicTacToe::new();
 
     println!("----------------------");
     println!("Welcome to Tic Tac Toe");
     println!("----------------------");
     println!();
-    println!("Game will start in 3 seconds...");
 
-    thread::sleep(Duration::from_secs(3));
+    println!("Game will start in 3 seconds...");
+    thread::sleep(Duration::from_secs(1));
+    println!("Game will start in 2 seconds...");
+    thread::sleep(Duration::from_secs(1));
+    println!("Game will start in 1 seconds...");
+    thread::sleep(Duration::from_secs(1));
 
     loop {
-        clear_terminal();
+        util::clear_terminal();
 
         println!();
         println!("{}", game.get_board());
@@ -37,7 +41,7 @@ fn play_hotseat() {
         loop {
             println!();
             print!("Input your row and col separated by space: ");
-            io::stdout().flush();
+            let _ = io::stdout().flush();
 
             let mut buffer = String::new();
             io::stdin()
@@ -96,11 +100,11 @@ fn play_hotseat() {
         if game.check_game_over() {
             break;
         } else {
-            game.next_turn();
+            let _ = game.next_turn();
         }
     }
 
-    clear_terminal();
+    util::clear_terminal();
 
     println!("----------------------");
     println!("      Game Over       ");
@@ -109,9 +113,4 @@ fn play_hotseat() {
     println!("{}", game.get_board());
     println!();
     println!("Player {} wins! Congratulations!", game.get_turn());
-}
-
-fn clear_terminal() {
-    Command::new("clear").status()
-        .expect("Failed to clear console");
 }
