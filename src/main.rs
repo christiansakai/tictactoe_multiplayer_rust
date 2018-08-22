@@ -1,14 +1,26 @@
 extern crate tictactoe;
 
+use std::env;
 use std::io::{self, Write};
-use std::thread;
-use std::time::Duration;
 
 use tictactoe::game::{TicTacToe};
+use tictactoe::server;
+use tictactoe::client;
 use tictactoe::util;
 
 fn main() {
-    play_hotseat();
+    util::clear_terminal();
+
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 && args[1] == "server" {
+        println!("Initialize as Server");
+        server::listen();
+    } else {
+        println!("Initialize as Client");
+        client::connect();
+    }
+
+    // play_hotseat();
 }
 
 fn play_hotseat() {
@@ -21,11 +33,11 @@ fn play_hotseat() {
     println!();
 
     println!("Game will start in 3 seconds...");
-    thread::sleep(Duration::from_secs(1));
+    util::sleep(1000);
     println!("Game will start in 2 seconds...");
-    thread::sleep(Duration::from_secs(1));
+    util::sleep(1000);
     println!("Game will start in 1 seconds...");
-    thread::sleep(Duration::from_secs(1));
+    util::sleep(1000);
 
     loop {
         util::clear_terminal();
