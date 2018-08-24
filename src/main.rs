@@ -7,6 +7,9 @@ use tictactoe::game::{TicTacToe};
 use tictactoe::network::{server, client};
 use tictactoe::util;
 
+const ADDRESS: &'static str = "127.0.0.1:6000";
+const MESSAGE_SIZE: usize = 32;
+
 fn main() {
     util::clear_terminal();
 
@@ -32,7 +35,7 @@ fn main() {
 
 //     // Server
 //     let mut game = TicTacToe::new();
-//     let server = server::listen();
+//     let server = Server::listen(ADDRESS, MESSAGE_SIZE);
 
 //     loop {
 //         let turn = game.get_turn();
@@ -51,6 +54,12 @@ fn main() {
 //         } else {
 //             let _ = game.next_turn();
 //         }
+//     }
+//
+//     // Client
+//     let client = Client::connect(ADDRESS);
+//
+//     loop {
 //     }
 // }
 
