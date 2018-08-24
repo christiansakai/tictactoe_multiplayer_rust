@@ -1,4 +1,4 @@
-use std::net::{TcpListener, TcpStream};
+use std::net::{TcpListener, TcpStream, Shutdown};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::io::{Read, Write, ErrorKind};
 use std::thread;
@@ -9,35 +9,42 @@ const ADDRESS: &'static str = "127.0.0.1:6000";
 const MESSAGE_SIZE: usize = 32;
 
 pub fn listen() {
-    // Start server
+    // Main Thread: Start listening as the Server
     let server = TcpListener::bind(ADDRESS)
         .expect("Failed to bind");
 
     server
-        .set_nonblocking(true)
+        .set_nonblocking(true) // TODO: Why non-blocking?
         .expect("Failed to initialize non-blocking");
 
-    // Create channel for thread communication
+    // Main Thread: Create channel for Main <-> Handler Thread communication
     let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
     let mut clients: Vec<TcpStream> = vec![];
 
-    while clients.len() <= 2 {
+    loop {
         if let Ok((mut socket, address)) = server.accept() {
+            if clients.len() == 2 {
+                println!("Max # of clients achieved, close connection with Client {}", address);
+                socket.shutdown(Shutdown::Both)
+                    .expect("Shutdown attempt failed");
+                continue;
+            }
+
             println!("Client {} connected", address);
 
             let client = socket.try_clone()
                 .expect(&format!("Failed to clone client {}", address));
             clients.push(client);
+            println!("Connected clients: {}", clients.len());
 
             let tx = tx.clone();
 
-            // Server's handler threads
-            // one thread handles one connected client
+            // Main Thread: Spawn a Handler Thread per connected Client
             thread::spawn(move | | loop {
                 let mut buffer = vec![0; MESSAGE_SIZE];
 
-                // Receives message from a client
+                // Handler Thread: Receives message from the Client
                 match socket.read_exact(&mut buffer) {
                     Ok(_) => {
                         let message_bytes: Vec<_> = buffer.into_iter()
@@ -49,7 +56,7 @@ pub fn listen() {
 
                         println!("Received from client {}, message \"{}\"", address, message);
 
-                        // Sends received message to main thread
+                        // Handler Thread: Sends received message to Main Thread
                         tx.send(message)
                             .expect("Failed to send message to rx");
                     },
@@ -64,25 +71,26 @@ pub fn listen() {
             });
 
         }
+
+        // Main Thread: Receive message from Handler Thread
+        if let Ok(message) = rx.try_recv() {
+            clients = clients
+                .into_iter()
+                .filter_map(|mut client| {
+                    let mut buffer = message.clone().into_bytes();
+                    buffer.resize(MESSAGE_SIZE, 0);
+
+                    // Main Thread: Echo the message back to the Client
+                    // Only filter Client which are still connected
+                    client
+                        .write_all(&buffer)
+                        .map(|_| client)
+                        .ok()
+                })
+                .collect();
+
+            util::sleep(100);
+        }
     }
 
-    // Server's main thread
-    if let Ok(message) = rx.try_recv() {
-        clients = clients
-            .into_iter()
-            .filter_map(|mut client| {
-                let mut buffer = message.clone().into_bytes();
-                buffer.resize(MESSAGE_SIZE, 0);
-
-                // TODO
-                // What does this do?
-                client
-                    .write_all(&buffer)
-                    .map(|_| client)
-                    .ok()
-            })
-            .collect();
-
-        util::sleep(100);
-    }
 }
