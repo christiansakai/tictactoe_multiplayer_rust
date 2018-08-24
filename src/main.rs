@@ -4,23 +4,24 @@ use std::env;
 use std::io::{self, Write};
 
 use tictactoe::game::{TicTacToe};
-use tictactoe::server;
-use tictactoe::client;
+use tictactoe::network::{server, client};
 use tictactoe::util;
 
 fn main() {
     util::clear_terminal();
 
     let args: Vec<String> = env::args().collect();
+
     if args.len() > 1 && args[1] == "server" {
         println!("Initialize as Server");
         server::listen();
-    } else {
+    } else if args.len() > 1 && args[1] == "client" {
         println!("Initialize as Client");
         client::connect();
+    } else {
+        play_hotseat();
     }
 
-    // play_hotseat();
 }
 
 fn play_hotseat() {
@@ -30,6 +31,8 @@ fn play_hotseat() {
     println!("----------------------");
     println!("Welcome to Tic Tac Toe");
     println!("----------------------");
+    println!();
+    println!("    Hotseat Mode");
     println!();
 
     println!("Game will start in 3 seconds...");
