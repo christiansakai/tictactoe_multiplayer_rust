@@ -5,7 +5,7 @@ use std::io::{self, Write};
 
 use tictactoe::game::{TicTacToe};
 use tictactoe::network::{server, client};
-use tictactoe::util;
+use tictactoe::util::{self, Input};
 
 const ADDRESS: &'static str = "127.0.0.1:6000";
 const MESSAGE_SIZE: usize = 32;
@@ -17,16 +17,35 @@ fn main() {
 
     if args.len() > 1 && args[1] == "server" {
         println!("Initialize as Server");
-        println!("Not implemented yet");
-        // server::listen();
+        // println!("Not implemented yet");
+        server::listen();
     } else if args.len() > 1 && args[1] == "client" {
         println!("Initialize as Client");
-        println!("Not implemented yet");
+        // println!("Not implemented yet");
+        play_lan();
         // client::connect();
     } else {
         play_hotseat();
     }
 
+}
+
+fn play_lan() {
+    util::clear_terminal();
+
+    // Client
+    let client = client::Client::connect(ADDRESS, MESSAGE_SIZE);
+
+    loop {
+        client.send_message("hellow");
+
+        let message = client.receive_message().unwrap();
+        println!("{}", message);
+
+    //  msg.render_board();
+    //  let (col, row) = get_col_row_from_user() 
+    //  client.send_to_server(col, row);
+    }
 }
 
 // Pseudo code
@@ -60,26 +79,20 @@ fn main() {
 //     let client = Client::connect(ADDRESS);
 //
 //     loop {
+//      let msg = client.wait_for_receive_message_from_server();
+//      msg.render_board();
+//      let (col, row) = get_col_row_from_user() 
+//      client.send_to_server(col, row);
 //     }
 // }
 
 fn play_hotseat() {
     util::clear_terminal();
+
+    let start_countdown: usize = 3;
+    util::display_intro(start_countdown);
+
     let mut game = TicTacToe::new();
-
-    println!("----------------------");
-    println!("Welcome to Tic Tac Toe");
-    println!("----------------------");
-    println!();
-    println!("    Hotseat Mode");
-    println!();
-
-    println!("Game will start in 3 seconds...");
-    util::sleep(1000);
-    println!("Game will start in 2 seconds...");
-    util::sleep(1000);
-    println!("Game will start in 1 seconds...");
-    util::sleep(1000);
 
     loop {
         util::clear_terminal();
@@ -91,80 +104,37 @@ fn play_hotseat() {
         println!();
 
         // Ask user input
-        let mut row_col = (-1, -1);
-        loop {
-            println!();
-            print!("Input your row and col separated by space: ");
-            let _ = io::stdout().flush();
+        let input = util::get_user_input();
+        let turn = game.get_turn();
 
-            let mut buffer = String::new();
-            io::stdin()
-                .read_line(&mut buffer)
-                .expect("Failed to read user input");
+        println!();
+        println!(
+            "Player {} chose row: {}, col: {}", 
+            turn,
+            input.row,
+            input.col,
+        );
+        println!();
 
-            let input_str = buffer
-                .trim()
-                .to_string();
-
-            // Validate user input
-            let input_vec: Vec<_> = input_str
-                .split_whitespace()
-                .collect();
-
-            if input_vec.len() == 2 {
-                if let Ok(row) = input_vec[0].parse() {
-                    row_col.0 = row;
-
-                    if let Ok(col) = input_vec[1].parse() {
-                        row_col.1 = col;
-
-                        let row = row_col.0;
-                        let col = row_col.1;
-                        let turn = game.get_turn();
-
-                        println!();
-                        println!(
-                            "Player {} chose row: {}, col: {}", 
-                            turn,
-                            row,
-                            col,
-                        );
-                        println!();
-            
-                        match game.fill(row, col) {
-                            Ok(_) => break,
-                            Err(msg) => {
-                                println!("Invalid move, {}", msg);
-                                continue;
-                            }
-                        }
-                    } else {
-                        println!("Col must be an integer between 0 to 2");
-                        continue;
-                    }
+        match game.fill(input.row, input.col) {
+            Ok(_) => {
+                if game.check_game_over() {
+                    break;
                 } else {
-                    println!("Row must be an integer between 0 to 2");
+                    let _ = game.next_turn();
                     continue;
                 }
-            } else {
+            }
+            Err(msg) => {
+                println!("Invalid move, {}", msg);
                 continue;
             }
-        }
-
-        if game.check_game_over() {
-            break;
-        } else {
-            let _ = game.next_turn();
         }
     }
 
     util::clear_terminal();
 
-    println!("----------------------");
-    println!("      Game Over       ");
-    println!("----------------------");
-    println!();
-    println!("{}", game.get_board());
-    println!();
-    println!("Player {} wins! Congratulations!", game.get_turn());
+    let game_board = game.get_board();
+    let winning_player = game.get_turn().to_string();
+    util::display_outro(game_board, winning_player);
 }
