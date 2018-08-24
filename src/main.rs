@@ -14,15 +14,45 @@ fn main() {
 
     if args.len() > 1 && args[1] == "server" {
         println!("Initialize as Server");
-        server::listen();
+        println!("Not implemented yet");
+        // server::listen();
     } else if args.len() > 1 && args[1] == "client" {
         println!("Initialize as Client");
-        client::connect();
+        println!("Not implemented yet");
+        // client::connect();
     } else {
         play_hotseat();
     }
 
 }
+
+// Pseudo code
+// fn play_lan() {
+//     util::clear_terminal();
+
+//     // Server
+//     let mut game = TicTacToe::new();
+//     let server = server::listen();
+
+//     loop {
+//         let turn = game.get_turn();
+//         server.send_message_to_client_to_tell_turn(turn);
+//         server.on_receive_message_from_client(|message| {
+//             let player = message.player;
+//             let row = message.row;
+//             let col = message.col;
+
+//             game.fill(row, col);
+//         });
+
+//         if game.check_game_over() {
+//             break;
+//             server.send_message_to_client_to_tell_result();
+//         } else {
+//             let _ = game.next_turn();
+//         }
+//     }
+// }
 
 fn play_hotseat() {
     util::clear_terminal();
