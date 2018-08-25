@@ -5,29 +5,23 @@ extern crate serde_json;
 use std::env;
 use std::io::{self, Write};
 
-use tictactoe::game::{TicTacToe};
+use tictactoe::game::{TicTacToe, MultiplayerStatus};
 use tictactoe::network::{server, client};
-use tictactoe::util::{self, Input};
+use tictactoe::util::{self};
 
 const ADDRESS: &'static str = "127.0.0.1:6000";
 const MESSAGE_SIZE: usize = 32;
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
 
-    let game = TicTacToe::new();
-    println!("{}", serde_json::to_string(&game).unwrap());
-    // util::clear_terminal();
-
-//     let args: Vec<String> = env::args().collect();
-
-//     if args.len() > 1 && args[1] == "server" {
-//         play_lan_as_server();
-//     } else if args.len() > 1 && args[1] == "client" {
-//         play_lan_as_client();
-//     } else {
-//         play_hotseat();
-//     }
-
+    if args.len() > 1 && args[1] == "server" {
+        play_lan_as_server();
+    } else if args.len() > 1 && args[1] == "client" {
+        play_lan_as_client();
+    } else {
+        play_hotseat();
+    }
 }
 
 fn play_lan_as_client() {
@@ -37,15 +31,28 @@ fn play_lan_as_client() {
     let client = client::Client::connect(ADDRESS, MESSAGE_SIZE);
 
     loop {
-        client.send_message("hellow");
-
         let message = client.receive_message().unwrap();
-        println!("{}", message);
+        let multiplayer_status: MultiplayerStatus = serde_json::from_str(&message).unwrap();
 
-        let input = util::get_user_input();
+        if let MultiplayerStatus::ServerAskInputFromClient(game) = multiplayer_status {
+            println!();
+            println!("{}", game.get_board());
+            println!();
+            println!("Turn:  Player {}", game.get_turn());
+            println!();
 
-        let message = format!("Col: {}, Row: {}", input.col, input.row);
-        client.send_message(&message); 
+            let input = util::get_user_input();
+            let multiplayer_status = MultiplayerStatus::ClientGiveInputToServer(input);
+
+            let message = serde_json::to_string(&multiplayer_status).unwrap();
+            client.send_message(&message); 
+        } else if let MultiplayerStatus::GameOver { game, winner } = multiplayer_status {
+            let game_board = game.get_board();
+            let winning_player = game.get_turn().to_string();
+
+            util::display_outro(game_board, winning_player);
+            break;
+        }
     }
 }
 

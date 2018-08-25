@@ -211,6 +211,19 @@ impl TicTacToe {
     }
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Input {
+    pub row: i32,
+    pub col: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum MultiplayerStatus {
+    ServerAskInputFromClient(TicTacToe),
+    ClientGiveInputToServer(Input),
+    GameOver { game: TicTacToe, winner: Player },
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

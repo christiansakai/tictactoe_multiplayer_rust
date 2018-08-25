@@ -2,6 +2,7 @@ use std::process::Command;
 use std::thread;
 use std::time::Duration;
 use std::io::{self, Write};
+use super::game::{Input};
 
 pub fn clear_terminal() {
     Command::new("clear").status()
@@ -25,12 +26,6 @@ pub fn display_intro(seconds: usize) {
         println!("Game will start in {} seconds...", seconds - x);
         sleep(1000);
     }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Input {
-    pub row: i32,
-    pub col: i32,
 }
 
 pub fn get_user_input() -> Input {
