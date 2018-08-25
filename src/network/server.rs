@@ -1,7 +1,9 @@
 use std::net::{TcpListener, TcpStream, Shutdown};
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver, Sender, SendError, RecvError};
 use std::io::{Read, Write, ErrorKind};
 use std::thread;
+
+use super::super::game::{Player};
 
 use util;
 
@@ -15,6 +17,7 @@ struct Channel {
 
 struct ClientHandler {
     address: String,
+    name: Player,
     channel: Channel,
 }
 
@@ -47,7 +50,7 @@ impl Server {
         self.clients.len()
     }
 
-    pub fn accept_client(&mut self) {
+    pub fn accept_client(&mut self, player_to_be_assigned: Player) {
         if let Ok((mut socket, address)) = self.server.accept() {
 
             let mut socket = socket.try_clone()
@@ -58,6 +61,7 @@ impl Server {
 
             let client_handler = ClientHandler {
                 address: address.to_string(),
+                name: player_to_be_assigned,
                 channel: Channel { sender, receiver },
             };
 
@@ -99,6 +103,15 @@ impl Server {
                 util::sleep(100);
             });
         }
+    }
+
+    pub fn send_message(&self, client: Player, message: &str) -> Result<(), SendError<String>> {
+    //     // self.main_sender.send(message.to_string())
+        Ok(())
+    }
+
+    pub fn receive_message(&self) -> Result<String, RecvError> {
+        self.channel.receiver.recv()
     }
 }
 

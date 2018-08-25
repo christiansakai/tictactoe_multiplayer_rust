@@ -64,13 +64,14 @@ fn play_lan_as_server() {
     let mut server = server::Server::listen(ADDRESS, MESSAGE_SIZE);
 
     while server.clients_count() < 2 {
-        server.accept_client();
+        server.accept_client(game.get_player_from_bench());
     }
 
     loop {
-        let game_board = game.get_board();
         let player = game.get_turn();
-//         server.send_message(player, game_board).unwrap();
+        let multiplayer_status = MultiplayerStatus::ServerAskInputFromClient(game.clone());
+        let message = serde_json::to_string(&multiplayer_status).unwrap();
+        server.send_message(player, &message).unwrap();
 
 //         let message = server.receive_message().unwrap();
 

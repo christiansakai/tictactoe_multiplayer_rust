@@ -1,4 +1,5 @@
 use std::fmt;
+use std::collections::VecDeque;
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum Player {
@@ -17,10 +18,11 @@ impl fmt::Display for Player {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TicTacToe {
     board: Vec<Vec<Player>>,
     turn: Player,
+    players_bench: VecDeque<Player>,
 }
 
 impl TicTacToe {
@@ -38,10 +40,15 @@ impl TicTacToe {
         }
 
         let turn = Player::O;
+
+        let mut players_bench = VecDeque::new();
+        players_bench.push_back(Player::O);
+        players_bench.push_back(Player::X);
         
         TicTacToe {
             board, 
             turn,
+            players_bench,
         }
     }
 
@@ -208,6 +215,10 @@ impl TicTacToe {
         board_str.push_str("   --------------- ");
 
         board_str
+    }
+
+    pub fn get_player_from_bench(&mut self) -> Player {
+        self.players_bench.pop_front().unwrap()
     }
 }
 
