@@ -1,6 +1,6 @@
 # Tic Tac Toe
 
-A Tic Tac Toe CLI game written in Rust with support for playing over LAN. A toy project for me to learn Rust programming language. No dependencies.
+A Tic Tac Toe CLI game written in Rust with support for playing over LAN. A toy project for me to learn Rust programming language. Strive to be minimal dependencies (except for things that are too hard of course, like serialization).
 
 Quick Start:
 

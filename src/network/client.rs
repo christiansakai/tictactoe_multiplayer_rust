@@ -2,7 +2,6 @@ use std::net::{TcpStream};
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError, SendError, RecvError};
 use std::io::{self, Read, Write, ErrorKind};
 use std::thread;
-use std::sync::Arc;
 
 use util;
 

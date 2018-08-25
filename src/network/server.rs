@@ -8,6 +8,100 @@ use util;
 const ADDRESS: &'static str = "127.0.0.1:6000";
 const MESSAGE_SIZE: usize = 32;
 
+struct Channel {
+    sender: Sender<String>,
+    receiver: Receiver<String>,
+}
+
+struct ClientHandler {
+    address: String,
+    channel: Channel,
+}
+
+pub struct Server {
+    server: TcpListener,
+    channel: Channel,
+    clients: Vec<ClientHandler>,
+}
+
+impl Server {
+    pub fn listen(address: &str, messages: usize) -> Server {
+        // Main Thread: Start listening as the Server
+        let server = TcpListener::bind(ADDRESS)
+            .expect("Failed to bind");
+
+        server
+            .set_nonblocking(true)
+            .expect("Failed to initialize non-blocking");
+
+        let clients: Vec<ClientHandler> = vec![];
+
+        // Main Thread: Create channel for Handler Thread -> Main Thread communication
+        let (sender, receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+        let channel = Channel { sender, receiver };
+
+        Server { server, channel, clients }
+    }
+
+    pub fn clients_count(&self) -> usize {
+        self.clients.len()
+    }
+
+    pub fn accept_client(&mut self) {
+        if let Ok((mut socket, address)) = self.server.accept() {
+
+            let mut socket = socket.try_clone()
+                .expect(&format!("Failed to clone client {}", address));
+
+            // Main Thread: Create channel for Main Thread -> Handler Thread communication
+            let (sender, receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+
+            let client_handler = ClientHandler {
+                address: address.to_string(),
+                channel: Channel { sender, receiver },
+            };
+
+            self.clients.push(client_handler);
+
+            println!("Client {} connected", address);
+            println!("Connected clients: {}", self.clients.len());
+
+            // Main Thread: Clone Main Thread's sender to be assigned to a Handler Thread
+            let server_channel_sender = self.channel.sender.clone();
+
+            // Main Thread: Spawn a Handler Thread per connected Client
+            thread::spawn(move | | loop {
+                let mut buffer = vec![0; MESSAGE_SIZE];
+
+                // Handler Thread: Receives message from the Client
+                match socket.read_exact(&mut buffer) {
+                    Ok(_) => {
+                        let message_bytes: Vec<_> = buffer.into_iter()
+                            .take_while(|&x| x != 0)
+                            .collect();
+
+                        let message = String::from_utf8(message_bytes)
+                            .expect("Invalid UTF-8 message");
+
+                        println!("Received from client {}, message \"{}\"", address, message);
+
+                        // Handler Thread: Sends received message to Main Thread
+                        server_channel_sender.send(message)
+                            .expect("Failed to send message to rx");
+                    },
+                    Err(ref err) if err.kind() == ErrorKind::WouldBlock => (),
+                    Err(_) => {
+                        println!("Closing connection with client {}", address);
+                        break;
+                    },
+                }
+
+                util::sleep(100);
+            });
+        }
+    }
+}
+
 pub fn listen() {
     // Main Thread: Start listening as the Server
     let server = TcpListener::bind(ADDRESS)

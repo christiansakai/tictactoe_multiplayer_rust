@@ -1,5 +1,7 @@
 extern crate tictactoe;
 
+extern crate serde_json;
+
 use std::env;
 use std::io::{self, Write};
 
@@ -11,29 +13,27 @@ const ADDRESS: &'static str = "127.0.0.1:6000";
 const MESSAGE_SIZE: usize = 32;
 
 fn main() {
-    util::clear_terminal();
 
-    let args: Vec<String> = env::args().collect();
+    let game = TicTacToe::new();
+    println!("{}", serde_json::to_string(&game).unwrap());
+    // util::clear_terminal();
 
-    if args.len() > 1 && args[1] == "server" {
-        println!("Initialize as Server");
-        // println!("Not implemented yet");
-        server::listen();
-    } else if args.len() > 1 && args[1] == "client" {
-        println!("Initialize as Client");
-        // println!("Not implemented yet");
-        play_lan();
-        // client::connect();
-    } else {
-        play_hotseat();
-    }
+//     let args: Vec<String> = env::args().collect();
+
+//     if args.len() > 1 && args[1] == "server" {
+//         play_lan_as_server();
+//     } else if args.len() > 1 && args[1] == "client" {
+//         play_lan_as_client();
+//     } else {
+//         play_hotseat();
+//     }
 
 }
 
-fn play_lan() {
+fn play_lan_as_client() {
     util::clear_terminal();
+    println!("Initialize as Client");
 
-    // Client
     let client = client::Client::connect(ADDRESS, MESSAGE_SIZE);
 
     loop {
@@ -42,49 +42,52 @@ fn play_lan() {
         let message = client.receive_message().unwrap();
         println!("{}", message);
 
-    //  msg.render_board();
-    //  let (col, row) = get_col_row_from_user() 
-    //  client.send_to_server(col, row);
+        let input = util::get_user_input();
+
+        let message = format!("Col: {}, Row: {}", input.col, input.row);
+        client.send_message(&message); 
     }
 }
 
-// Pseudo code
-// fn play_lan() {
-//     util::clear_terminal();
+fn play_lan_as_server() {
+    util::clear_terminal();
+    println!("Initialize as Server");
 
-//     // Server
-//     let mut game = TicTacToe::new();
-//     let server = Server::listen(ADDRESS, MESSAGE_SIZE);
+    let mut game = TicTacToe::new();
+    let mut server = server::Server::listen(ADDRESS, MESSAGE_SIZE);
 
-//     loop {
-//         let turn = game.get_turn();
-//         server.send_message_to_client_to_tell_turn(turn);
-//         server.on_receive_message_from_client(|message| {
-//             let player = message.player;
-//             let row = message.row;
-//             let col = message.col;
+    while server.clients_count() < 2 {
+        server.accept_client();
+    }
 
-//             game.fill(row, col);
-//         });
+    loop {
+        let game_board = game.get_board();
+        let player = game.get_turn();
+//         server.send_message(player, game_board).unwrap();
 
-//         if game.check_game_over() {
-//             break;
-//             server.send_message_to_client_to_tell_result();
-//         } else {
-//             let _ = game.next_turn();
+//         let message = server.receive_message().unwrap();
+
+//         match game.fill(input.row, input.col) {
+//             Ok(_) => {
+//                 if game.check_game_over() {
+//                     break;
+//                 } else {
+//                     let _ = game.next_turn();
+//                     continue;
+//                 }
+//             }
+//             Err(msg) => {
+//                 println!("Invalid move, {}", msg);
+//                 continue;
+//             }
 //         }
-//     }
-//
-//     // Client
-//     let client = Client::connect(ADDRESS);
-//
-//     loop {
-//      let msg = client.wait_for_receive_message_from_server();
-//      msg.render_board();
-//      let (col, row) = get_col_row_from_user() 
-//      client.send_to_server(col, row);
-//     }
-// }
+    }
+
+    let winner = game.get_turn().to_string();
+
+//     server.send_message(winner, game_board, "You win!");
+//     server.send_message(loser, game_board, "You lose!");
+}
 
 fn play_hotseat() {
     util::clear_terminal();

@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum Player {
     O,
     X,
@@ -17,7 +17,7 @@ impl fmt::Display for Player {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TicTacToe {
     board: Vec<Vec<Player>>,
     turn: Player,
