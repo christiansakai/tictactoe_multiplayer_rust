@@ -32,6 +32,7 @@ fn play_lan_as_client() {
 
     loop {
         let message = client.receive_message().unwrap();
+        println!("HMMM {}", &message);
         let multiplayer_status: MultiplayerStatus = serde_json::from_str(&message).unwrap();
 
         if let MultiplayerStatus::ServerAskInputFromClient(game) = multiplayer_status {
@@ -64,7 +65,7 @@ fn play_lan_as_server() {
     let mut server = server::Server::listen(ADDRESS, MESSAGE_SIZE);
 
     while server.clients_count() < 2 {
-        server.accept_client(game.get_player_from_bench());
+        server.accept_client(&mut game);
     }
 
     loop {
@@ -73,28 +74,32 @@ fn play_lan_as_server() {
         let message = serde_json::to_string(&multiplayer_status).unwrap();
         server.send_message(player, &message).unwrap();
 
-//         let message = server.receive_message().unwrap();
+        println!("AHYUL {}", &message);
 
-//         match game.fill(input.row, input.col) {
-//             Ok(_) => {
-//                 if game.check_game_over() {
-//                     break;
-//                 } else {
-//                     let _ = game.next_turn();
-//                     continue;
-//                 }
-//             }
-//             Err(msg) => {
-//                 println!("Invalid move, {}", msg);
-//                 continue;
-//             }
-//         }
+        let message = server.receive_message().unwrap();
+        let multiplayer_status = serde_json::from_str(&message).unwrap();
+        if let MultiplayerStatus::ClientGiveInputToServer(input) = multiplayer_status {
+            match game.fill(input.row, input.col) {
+                Ok(_) => {
+                    if game.check_game_over() {
+                        break;
+                    } else {
+                        let _ = game.next_turn();
+                        continue;
+                    }
+                }
+                Err(msg) => {
+                    println!("Invalid move, {}", msg);
+                    continue;
+                }
+            }
+        }
     }
 
-    let winner = game.get_turn().to_string();
-
-//     server.send_message(winner, game_board, "You win!");
-//     server.send_message(loser, game_board, "You lose!");
+    let winner = game.get_turn();
+    let multiplayer_status = MultiplayerStatus::GameOver { game, winner };
+    let message = serde_json::to_string(&multiplayer_status).unwrap();
+    server.broadcast_message(&message);
 }
 
 fn play_hotseat() {

@@ -3,7 +3,7 @@ use std::sync::mpsc::{self, Receiver, Sender, SendError, RecvError};
 use std::io::{Read, Write, ErrorKind};
 use std::thread;
 
-use super::super::game::{Player};
+use super::super::game::{Player, TicTacToe};
 
 use util;
 
@@ -50,7 +50,7 @@ impl Server {
         self.clients.len()
     }
 
-    pub fn accept_client(&mut self, player_to_be_assigned: Player) {
+    pub fn accept_client(&mut self, game: &mut TicTacToe) {
         if let Ok((mut socket, address)) = self.server.accept() {
 
             let mut socket = socket.try_clone()
@@ -58,6 +58,8 @@ impl Server {
 
             // Main Thread: Create channel for Main Thread -> Handler Thread communication
             let (sender, receiver): (Sender<String>, Receiver<String>) = mpsc::channel();
+
+            let player_to_be_assigned = game.get_player_from_bench();
 
             let client_handler = ClientHandler {
                 address: address.to_string(),
@@ -100,14 +102,27 @@ impl Server {
                     },
                 }
 
+                // let received_msg = receiver.recv().unwrap();
+
                 util::sleep(100);
             });
         }
     }
 
     pub fn send_message(&self, client: Player, message: &str) -> Result<(), SendError<String>> {
-    //     // self.main_sender.send(message.to_string())
+        if client == Player::O {
+            return self.clients[0].channel.sender.send(message.to_string());
+        } else if client == Player::X {
+            return self.clients[1].channel.sender.send(message.to_string());
+        }
+
         Ok(())
+    }
+
+    pub fn broadcast_message(&self, message: &str) {
+        for client_handler in &self.clients {
+            client_handler.channel.sender.send(message.to_string()).unwrap();
+        }
     }
 
     pub fn receive_message(&self) -> Result<String, RecvError> {
